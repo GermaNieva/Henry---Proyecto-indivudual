@@ -7,7 +7,7 @@ import os
 app = FastAPI()
 
 # Ruta relativa al archivo Parquet
-relative_path = os.path.join(os.path.dirname(__file__), '../DATASET/movies_credits_merged.parquet')
+relative_path = os.path.join(os.path.dirname(__file__), '../DATASET/merged_enriched_dataset.parquet')
 
 # Verificar si el archivo existe
 if not os.path.exists(relative_path):
