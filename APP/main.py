@@ -108,7 +108,7 @@ data = df[['title', 'genre_name', 'overview', 'actors']]
 # Crear una columna combinada de características
 data['combined_features'] = data.apply(lambda x: ' '.join(x.dropna().astype(str)), axis=1)
 
-# Implementación de la función de recomendación mejorada
+# Implementación de la función de recomendación 
 def recomendacion(titulo):
     # Crear una matriz TF-IDF de las características combinadas
     tfidf = TfidfVectorizer(stop_words='english')
