@@ -37,4 +37,7 @@ fastparquet==2023.8.0
 ipykernel==6.29.5
 matplotlib==3.9.1
 seaborn==0.13.2
+networkx==3.3
+wordcloud==1.9.3
+scikit-learn==1.5.1
 

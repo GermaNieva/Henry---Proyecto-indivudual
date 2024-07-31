@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
 import pandas as pd
 import os
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 app = FastAPI()
 
@@ -83,7 +83,6 @@ def get_actor(nombre_actor: str):
         "mensaje": f"El actor {nombre_actor} ha participado de {cantidad} filmaciones, el mismo ha conseguido un retorno de {total_retorno} con un promedio de {promedio_retorno} por filmación"
     }
 
-
 @app.get("/get_director/{nombre_director}")
 def get_director(nombre_director: str):
     # Verificar que la columna 'directors' existe en el DataFrame
@@ -103,8 +102,47 @@ def get_director(nombre_director: str):
         "películas": films_list
     }
 
-# Ejecutar el servidor de FastAPI
-import uvicorn
+# Seleccionar las columnas relevantes
+data = df[['title', 'genre_name', 'overview', 'actors']]
 
+# Crear una columna combinada de características
+data['combined_features'] = data.apply(lambda x: ' '.join(x.dropna().astype(str)), axis=1)
+
+# Implementación de la función de recomendación mejorada
+def recomendacion(titulo):
+    # Crear una matriz TF-IDF de las características combinadas
+    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf.fit_transform(data['combined_features'])
+    
+    # Ajustar el modelo NearestNeighbors
+    nn = NearestNeighbors(metric='cosine', algorithm='brute')
+    nn.fit(tfidf_matrix)
+    
+    # Crear una serie para mapear los índices a los títulos de las películas
+    indices = pd.Series(data.index, index=data['title']).drop_duplicates()
+    
+    # Verificar si el título está en el índice
+    if titulo not in indices:
+        return {"Error": "Título no encontrado"}
+    
+    # Obtener el índice de la película que coincide con el título
+    idx = indices[titulo]
+    
+    # Encontrar las 5 películas más similares
+    distances, indices = nn.kneighbors(tfidf_matrix[idx], n_neighbors=6)
+    
+    # Obtener los índices de las películas
+    movie_indices = indices[0][1:]  # Excluyendo la misma película
+    
+    # Devolver los títulos y overview de las 5 películas más similares
+    recommended_movies = {data['title'].iloc[i]: data['overview'].iloc[i] for i in movie_indices}
+    return recommended_movies
+
+@app.get("/recomendacion/{titulo}")
+def get_recomendacion(titulo: str):
+    return recomendacion(titulo)
+
+# Ejecutar el servidor de FastAPI
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
